@@ -11,18 +11,18 @@ import Urakka.Free
 import Urakka.Ref
 
 -- | Run 'Urakka' completely serially.
-runSerial :: Urakka a -> IO a
-runSerial u = do
-    res <- runSerialStep u
+runSerial :: a -> Urakka a b -> IO b
+runSerial a u = do
+    res <- runSerialStep a u
     case res of
         Right x -> return x
-        Left u' -> runSerial u'
+        Left u' -> runSerial a u'
 
 -- | Run one step of urakka, return either simplified 'Urakka', or final value.
-runSerialStep :: Urakka a -> IO (Either (Urakka a) a)
-runSerialStep (Urakka u) = case necessary u of
-    Success x -> return (Right x)
-    Failure (Necessary (UrakkaRef c trA trB ref) a :| _) -> do
+runSerialStep :: a -> Urakka a b -> IO (Either (Urakka a b) b)
+runSerialStep a (Urakka u) = case necessary u a of
+    Right x -> return (Right x)
+    Left (Necessary (UrakkaRef c trA trB ref) a) -> do
         res <- readTVarIO ref
         b <- case res of
             Right b -> return b
@@ -31,11 +31,11 @@ runSerialStep (Urakka u) = case necessary u of
                 atomically $ writeTVar ref (Right b)
                 return b
 
-        let u' = simplify u $ \(UrakkaRef c' trA' trB' ref') -> do
-                guard (c == c')
+        let u' = flippedSimplify u $ \(UrakkaRef c' trA' trB' ref') -> do
+                guard $ c == c'
                 Refl <- testEquality trA trA'
                 Refl <- testEquality trB trB'
-                guard (ref == ref')
+                guard $ ref == ref'
                 return b
 
         return (Left (Urakka u'))

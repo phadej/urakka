@@ -4,6 +4,7 @@ module Urakka (
     -- * Construction
     Urakka,
     urakka,
+    urakka',
     if_,
     -- * Running
     runSerial,
@@ -16,5 +17,5 @@ import Urakka.Serial
 import Urakka.Concurrent
 
 -- | Conditional executuion.
-if_ :: Urakka Bool -> Urakka a -> Urakka a -> Urakka a
+if_ :: Urakka a Bool -> Urakka () b -> Urakka () b -> Urakka a b
 if_ (Urakka x) (Urakka y) (Urakka z) = Urakka $ ifFree x y z

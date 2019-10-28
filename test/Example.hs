@@ -14,7 +14,7 @@ main :: IO ()
 main = defaultMain $ testGroup "example"
     [ testCase "serial" $ do
         u <- example
-        (x, diff) <- clocked $ runSerial u
+        (x, diff) <- clocked $ runSerial () u
 
         debug $ show diff
 
@@ -23,7 +23,7 @@ main = defaultMain $ testGroup "example"
 
     , testCase "concurrent" $ do
         u <- example
-        (x, diff) <- clocked $ runConcurrent u
+        (x, diff) <- clocked $ runConcurrent () u
 
         debug $ show diff
 
@@ -50,7 +50,7 @@ debug _ = return ()
 -- Example
 -------------------------------------------------------------------------------
 
-example :: IO (Urakka Char)
+example :: IO (Urakka () Char)
 example = do
     x <- urakka (pure ()) $ \_ -> do
         debug "x"
