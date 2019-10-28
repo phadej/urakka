@@ -15,6 +15,7 @@ import Control.DeepSeq         (NFData, force)
 import Control.Exception       (evaluate)
 import Control.Monad.IO.Class  (MonadIO (..))
 import Control.Monad.IO.Unlift (MonadUnliftIO (..))
+import Control.Selective       (Selective (..))
 import Control.Selective       (Selective)
 import Data.IORef              (IORef, atomicModifyIORef', newIORef)
 import System.IO.Unsafe        (unsafePerformIO)
@@ -25,6 +26,9 @@ import Urakka.Free
 -- | 'Urakka' is a /task/ in this build system.
 newtype Urakka a b = Urakka (Free UrakkaRef a b)
   deriving newtype (Functor, Applicative, Category, Arrow, ArrowChoice)
+
+instance a ~ () => Selective (Urakka a) where
+    select (Urakka a) (Urakka b) = Urakka (select a b)
 
 data UrakkaRef a b where
     UrakkaRef

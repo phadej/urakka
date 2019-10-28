@@ -10,6 +10,8 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Urakka.Free
 import Urakka.Ref
 
+import Debug.Trace
+
 -- | Run 'Urakka' completely serially.
 runSerial :: a -> Urakka a b -> IO b
 runSerial a u = do

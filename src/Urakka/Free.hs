@@ -1,15 +1,15 @@
+{-# LANGUAGE Arrows              #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE Arrows #-}
 {-# OPTIONS_GHC -Wall -Werror #-}
 module Urakka.Free where
 
-import Control.Selective  (Selective (..))
+import Control.Selective (Selective (..))
 
+import Control.Arrow    (Arrow (..), ArrowChoice (..), returnA, (>>>))
 import Control.Category (Category (..))
-import Control.Arrow (Arrow (..), ArrowChoice (..), returnA, (>>>))
 
 import Prelude hiding (id, (.))
 
@@ -39,9 +39,17 @@ data Free p a b where
          -> Free p (Either b d) y
          -> Free p x y
 
+mult :: (x -> (a, c)) -> Free p a b -> Free p c d -> Free p (b, d) y -> Free p x y
+mult f (Pure x) (Pure y) g = Pure (f >>> x *** y) >>> g
+mult f x y g = Mult f x y g
+
+choi :: (x -> (Either a c)) -> Free p a b -> Free p c d -> Free p (Either b d) y -> Free p x y
+choi f (Pure x) (Pure y) g = Pure (f >>> x +++ y) >>> g
+choi f x y g = Choi f x y g
+
 instance Category (Free p) where
     id = Pure id
-    
+
     f . Pure g       = lmap g f
     f . Comp h p g   = Comp h p (f . g)
     f . Mult h x y g = Mult h x y (f . g)
@@ -53,8 +61,16 @@ lmap f (Comp h p g)   = Comp (h . f) p g
 lmap f (Mult h x y g) = Mult (h . f) x y g
 lmap f (Choi h x y g) = Choi (h . f) x y g
 
+-- |
+--
+-- @
+-- arr (\x -> ((), x)) >>> first f >>> arr (uncurry ($))
+-- @
 toA :: Arrow a => a () (b -> c) -> a b c
-toA f = arr (\x -> ((), x)) >>> first f >>> arr (uncurry ($))
+toA f = proc b -> do
+    bc <- f -< ()
+    returnA -< bc b
+
 
 instance Arrow (Free p) where
     arr = Pure
@@ -100,13 +116,13 @@ simplify _ x@Pure  {} = x
 simplify f (Comp h p g) = case f p of
     Nothing -> Comp h p (simplify f g)
     Just b  -> arr (const b) >>> simplify f g
-simplify f (Mult h a b g) = Mult h (simplify f a) (simplify f b) (simplify f g)
-simplify f (Choi h a b g) = Choi h (simplify f a) (simplify f b) (simplify f g)
+simplify f (Mult h a b g) = mult h (simplify f a) (simplify f b) (simplify f g)
+simplify f (Choi h a b g) = choi h (simplify f a) (simplify f b) (simplify f g)
 
 ifFree :: Free p a Bool -> Free p () b -> Free p () b -> Free p a b
 ifFree x y z = proc a -> do
     b <- x -< a
-    if b then y -< () else z -< () 
+    if b then y -< () else z -< ()
 
 overEstimateFree :: HasId p => Free p a b -> Int
 overEstimateFree = IS.size . go where
@@ -124,8 +140,8 @@ underEstimateFree = IS.size . go where
     go (Mult _ a b g) = IS.union (go g) (IS.union (go a) (go b))
     go (Choi _ a b g) = IS.union (go g) (IS.intersection (go a) (go b))
 
-debug :: forall p x y. (forall a b. p a b -> ShowS) -> Free p x y -> ShowS
-debug sp = go 0 where
+structureFree :: forall p x y. (forall a b. p a b -> ShowS) -> Free p x y -> ShowS
+structureFree sp = go 0 where
     go :: Int -> Free p u v -> ShowS
     go d (Pure _)       = showParen (d > 10) $ showString "(arr _)"
     go d (Comp _ p g)   = showParen (d > 1) $ sp p . showString " >>> " . go 1 g
