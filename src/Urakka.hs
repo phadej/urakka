@@ -5,6 +5,7 @@ module Urakka (
     Urakka,
     urakka,
     urakka',
+    urakkaSTM,
     if_,
     -- * Running
     runSerial,

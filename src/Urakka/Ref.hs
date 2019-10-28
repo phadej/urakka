@@ -6,11 +6,12 @@ module Urakka.Ref (
     UrakkaRef (..),
     urakka,
     urakka',
+    urakkaSTM,
     ) where
 
 import Control.Arrow           (Arrow, ArrowChoice, returnA, (>>>))
 import Control.Category        (Category)
-import Control.Concurrent.STM  (TVar, newTVarIO)
+import Control.Concurrent.STM  (TVar, newTVarIO, STM, retry, readTVar)
 import Control.DeepSeq         (NFData, force)
 import Control.Exception       (evaluate)
 import Control.Monad.IO.Class  (MonadIO (..))
@@ -27,7 +28,7 @@ import Urakka.Free
 newtype Urakka a b = Urakka (Free UrakkaRef a b)
   deriving newtype (Functor, Applicative, Category, Arrow, ArrowChoice)
 
-instance a ~ () => Selective (Urakka a) where
+instance Selective (Urakka a) where
     select (Urakka a) (Urakka b) = Urakka (select a b)
 
 data UrakkaRef a b where
@@ -42,6 +43,7 @@ counterRef :: IORef Int
 counterRef = unsafePerformIO (newIORef 0)
 {-# NOINLINE counterRef #-}
 
+-- | Create a 'Urakka' task. 'Functor' way, think @<**>@
 urakka
     :: (Typeable b, Typeable c, NFData c, MonadUnliftIO m)
     => Urakka a b
@@ -51,20 +53,35 @@ urakka g k = do
     u <- urakka' k
     return (g >>> u)
 
--- as then we can watch individual task progress
+-- | Create an 'Urakka' task. 'Arrow' way.
 urakka'
     :: (Typeable a, Typeable b, NFData b, MonadUnliftIO m)
     => (a -> m b)
     -> m (Urakka a b)
-urakka' k = withRunInIO $ \runInIO -> do
+urakka' = fmap snd . urakkaSTM
+
+-- | 'urakka'' which also returns a 'STM" action, which can be used to track progress.
+urakkaSTM
+    :: (Typeable a, Typeable b, NFData b, MonadUnliftIO m)
+    => (a -> m b)
+    -> m (STM b, Urakka a b)
+urakkaSTM k = withRunInIO $ \runInIO -> do
+    -- a TVar holding either an IO action, or a result
     var <- liftIO $ newTVarIO $ Left $ \a -> do
         b <- runInIO (k a)
         evaluate (force b)
 
+    -- a STM action to check whether task is completed
+    let stm = do
+            res <- readTVar var
+            case res of
+                Left _  -> retry
+                Right x -> return x
+
     c <- atomicModifyIORef' counterRef $ \n -> (succ n, n)
     let ref = UrakkaRef c typeRep typeRep var
     -- record ref
-    return (Urakka (Comp id ref returnA))
+    return (stm, Urakka (Comp id ref returnA))
 
 instance HasId UrakkaRef where
     getId (UrakkaRef c _ _ _) = c

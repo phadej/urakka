@@ -86,8 +86,14 @@ instance Applicative (Free p a) where
     pure = arr . const
     f <*> x = f &&& x >>> arr (uncurry ($))
 
-instance a ~ () => Selective (Free p a) where
-    select x y = x >>> toA y ||| returnA
+instance Selective (Free p a) where
+    select x y = proc a -> do
+        e <- x -< a
+        case e of
+            Right u -> returnA -< u
+            Left v -> do
+                f <- y -< a
+                returnA -< f v
 
 data Necessary p where
     Necessary :: p a b -> a -> Necessary p
