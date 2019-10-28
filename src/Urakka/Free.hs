@@ -99,6 +99,15 @@ selectFree x y = proc a -> do
             f <- y -< a
             returnA -< f v
 
+ifFree :: Free p a Bool -> Free p a b -> Free p a b -> Free p a b
+ifFree x y z = proc a -> do
+    b <- x -< a
+    if b then y -< a else z -< a
+
+-------------------------------------------------------------------------------
+-- Simplification
+-------------------------------------------------------------------------------
+
 data Necessary p where
     Necessary :: p a b -> a -> Necessary p
 
@@ -129,10 +138,11 @@ simplify f (Comp h p g) = case f p of
 simplify f (Mult h a b g) = mult h (simplify f a) (simplify f b) (simplify f g)
 simplify f (Choi h a b g) = choi h (simplify f a) (simplify f b) (simplify f g)
 
-ifFree :: Free p a Bool -> Free p () b -> Free p () b -> Free p a b
-ifFree x y z = proc a -> do
-    b <- x -< a
-    if b then y -< () else z -< ()
+
+
+-------------------------------------------------------------------------------
+-- Estimation
+-------------------------------------------------------------------------------
 
 overEstimateFree :: HasId p => Free p a b -> Int
 overEstimateFree = IS.size . go where
@@ -149,6 +159,10 @@ underEstimateFree = IS.size . go where
     go (Comp _ p g)   = IS.insert (getId p) (go g)
     go (Mult _ a b g) = IS.union (go g) (IS.union (go a) (go b))
     go (Choi _ a b g) = IS.union (go g) (IS.intersection (go a) (go b))
+
+-------------------------------------------------------------------------------
+-- Debug
+-------------------------------------------------------------------------------
 
 structureFree :: forall p x y. (forall a b. p a b -> ShowS) -> Free p x y -> ShowS
 structureFree sp = go 0 where

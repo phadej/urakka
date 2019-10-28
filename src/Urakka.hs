@@ -7,10 +7,13 @@ module Urakka (
     urakka',
     urakkaSTM,
     if_,
-    -- * Running
+    -- * Running serially
     runSerial,
     runSerialStep,
+    -- * Running concurrently
     runConcurrent,
+    runConcurrent',
+    ConcSt, urakkaDone, urakkaQueued,
     -- * Estimation
     -- | Estimation takes the task sharing into account.
     underEstimate,
@@ -26,7 +29,7 @@ import Urakka.Serial
 import Urakka.Concurrent
 
 -- | Conditional executuion.
-if_ :: Urakka a Bool -> Urakka () b -> Urakka () b -> Urakka a b
+if_ :: Urakka a Bool -> Urakka a b -> Urakka a b -> Urakka a b
 if_ (Urakka x) (Urakka y) (Urakka z) = Urakka $ ifFree x y z
 
 -- | Print the structure of 'Urakka'.

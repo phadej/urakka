@@ -64,7 +64,7 @@ urakka'
     -> m (Urakka a b)
 urakka' = fmap snd . urakkaSTM
 
--- | 'urakka'' which also returns a 'STM" action, which can be used to track progress.
+-- | 'urakka'' which also returns a 'STM' action, which can be used to track progress.
 urakkaSTM
     :: (Typeable a, Typeable b, NFData b, MonadUnliftIO m)
     => (a -> m b)

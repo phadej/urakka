@@ -28,7 +28,9 @@ data ConcSt = ConcSt
 urakkaDone :: ConcSt -> STM Int
 urakkaDone = readTVar . psDone
 
--- | Amount of enqueued (including done) tasks.
+-- | Amount of total enqueued (including done) tasks.
+--
+-- Grows, but not over 'overEstimate' count.
 urakkaQueued :: ConcSt -> STM Int
 urakkaQueued = fmap IS.size . readTVar . psQueued
 
