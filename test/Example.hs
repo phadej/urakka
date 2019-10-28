@@ -21,6 +21,16 @@ main = defaultMain $ testGroup "example"
         x @=? 'x'
         assertBool "Takes over 15ms" $ diff > 15 * 1000000
 
+    , testCase "structure" $ do
+        let loop u = do
+                assertBool "valid" $ valid u
+                e <- runSerialStep () u
+                case e of
+                    Right x -> x @=? 'x'
+                    Left u' -> loop u'
+
+        example >>= loop
+
     , testCase "concurrent" $ do
         u <- example
         (x, diff) <- clocked $ runConcurrent () u

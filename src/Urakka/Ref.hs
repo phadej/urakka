@@ -1,4 +1,4 @@
-{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Urakka.Ref (
@@ -11,7 +11,7 @@ module Urakka.Ref (
 
 import Control.Arrow           (Arrow, ArrowChoice, returnA, (>>>))
 import Control.Category        (Category)
-import Control.Concurrent.STM  (TVar, newTVarIO, STM, retry, readTVar)
+import Control.Concurrent.STM  (STM, TVar, newTVarIO, readTVar, retry)
 import Control.DeepSeq         (NFData, force)
 import Control.Exception       (evaluate)
 import Control.Monad.IO.Class  (MonadIO (..))
@@ -23,12 +23,17 @@ import Type.Reflection         (TypeRep, Typeable, typeRep)
 
 import Urakka.Free
 
+
 -- | 'Urakka' is a /task/ in this build system.
 newtype Urakka a b = Urakka (Free UrakkaRef a b)
-  deriving newtype (Functor, Applicative, Category, Arrow, ArrowChoice)
+  deriving (Functor, Applicative, Category, Arrow, ArrowChoice)
 
 instance Selective (Urakka a) where
-    select (Urakka a) (Urakka b) = Urakka (select a b)
+    select = select_
+
+-- | Implementation of 'select'
+select_ :: Urakka a (Either b c) -> Urakka a (b -> c) -> Urakka a c
+select_ (Urakka a) (Urakka b) = Urakka (selectFree a b)
 
 data UrakkaRef a b where
     UrakkaRef

@@ -6,10 +6,10 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
 module Urakka.Free where
 
+import Control.Arrow     (Arrow (..), ArrowChoice (..), returnA, (>>>))
+import Control.Category  (Category (..))
 import Control.Selective (Selective (..))
-
-import Control.Arrow    (Arrow (..), ArrowChoice (..), returnA, (>>>))
-import Control.Category (Category (..))
+import Data.Maybe        (isJust)
 
 import Prelude hiding (id, (.))
 
@@ -74,6 +74,7 @@ toA f = proc b -> do
 
 instance Arrow (Free p) where
     arr = Pure
+
     f *** g = Mult id f g id
 
 instance ArrowChoice (Free p) where
@@ -87,13 +88,16 @@ instance Applicative (Free p a) where
     f <*> x = f &&& x >>> arr (uncurry ($))
 
 instance Selective (Free p a) where
-    select x y = proc a -> do
-        e <- x -< a
-        case e of
-            Right u -> returnA -< u
-            Left v -> do
-                f <- y -< a
-                returnA -< f v
+    select = selectFree
+
+selectFree :: Free p a (Either b c) -> Free p a (b -> c) -> Free p a c
+selectFree x y = proc a -> do
+    e <- x -< a
+    case e of
+        Right u -> returnA -< u
+        Left v -> do
+            f <- y -< a
+            returnA -< f v
 
 data Necessary p where
     Necessary :: p a b -> a -> Necessary p
@@ -159,3 +163,19 @@ structureFree sp = go 0 where
         $ showParen (d > 2) $ go 2 a . showString " +++ " . go 1 b
         . showString " >>> "
         . go 1 g
+
+validFree  :: Free p x y -> Bool
+validFree = isJust . go where
+    go :: Free p x y -> Maybe Bool
+    go (Pure _)       = Just False
+    go (Comp _ _ g)   = go g >> Just True
+    go (Mult _ a b g) = do
+        a' <- go a
+        b' <- go b
+        _  <- go g
+        return (a' || b')
+    go (Choi _ a b g) = do
+        a' <- go a
+        b' <- go b
+        _  <- go g
+        return (a' || b')

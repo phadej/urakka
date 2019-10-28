@@ -9,7 +9,6 @@ module Urakka.Concurrent (
     urakkaQueued,
     ) where
 
-import Control.Category ((>>>))
 import Control.Concurrent.Async (Async, async, wait)
 import Control.Concurrent.STM
        (STM, TVar, atomically, modifyTVar', newTVarIO, readTVar, retry, writeTVar)

@@ -1,6 +1,23 @@
 cabal-version: 2.4
 name:          urakka
 version:       0.1
+synopsis:      Urakka, a small arrowy build system
+category:      Development
+description:
+  Arrowy build system.
+  .
+  Allows 'Selective' dependency definitions.
+  .
+  /Urakka/ is a Finnish word for a piece of work.
+
+maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+license:       GPL-2.0-or-later
+license-file:  LICENSE
+tested-with:   GHC ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.1
+
+source-repository head
+  type:     git
+  location: https://github.com/phadej/urakka.git
 
 library
   default-language: Haskell2010
@@ -14,13 +31,18 @@ library
     Urakka.Free
     Urakka.Ref
 
+  -- GHC boot libs
+  build-depends:
+    , base          >=4.10     && <4.14
+    , containers    ^>=0.5.10.0 || ^>=0.6.0.1
+    , deepseq       ^>=1.4.3.0
+    , stm           ^>=2.4.5.1 || ^>=2.5.0.0
+    , transformers  ^>=0.5.2.0
+
+  -- extra dependencies
   build-depends:
     , async          ^>=2.2.2
-    , base           >=4.11    && <4.13
-    , containers     ^>=0.5.11 || ^>=0.6.0.1
-    , deepseq        ^>=1.4.3.0
     , selective      ^>=0.3
-    , stm            ^>=2.4.5.1 || ^>=2.5.0.0
     , unliftio-core  ^>=0.1.2.0
 
 test-suite example

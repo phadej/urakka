@@ -1,6 +1,9 @@
 {-# LANGUAGE GADTs #-}
 -- | Serial executor.
-module Urakka.Serial where
+module Urakka.Serial (
+    runSerial,
+    runSerialStep,
+    )  where
 
 import Control.Concurrent.STM (atomically, readTVarIO, writeTVar)
 import Control.Monad          (guard)
