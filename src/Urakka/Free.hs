@@ -13,7 +13,8 @@ import Data.Maybe        (isJust)
 
 import Prelude hiding (id, (.))
 
-import qualified Data.IntSet as IS
+import qualified Data.IntMap.Strict as IM
+import qualified Data.IntSet        as IS
 
 class HasId p where
     getId :: p a b -> Int
@@ -151,6 +152,14 @@ overEstimateFree = IS.size . go where
     go (Comp _ p g)   = IS.insert (getId p) (go g)
     go (Mult _ a b g) = IS.union (go g) (IS.union (go a) (go b))
     go (Choi _ a b g) = IS.union (go g) (IS.union (go a) (go b))
+
+overEstimateFree' :: HasId p => Free p a b -> IM.IntMap Int
+overEstimateFree' = go where
+    go :: HasId p => Free p a b -> IM.IntMap Int
+    go (Pure _)       = IM.empty
+    go (Comp _ p g)   = IM.insertWith (+) (getId p) 1 (go g)
+    go (Mult _ a b g) = IM.unionWith (+) (go g) (IM.unionWith (+) (go a) (go b))
+    go (Choi _ a b g) = IM.unionWith (+) (go g) (IM.unionWith (+) (go a) (go b))
 
 underEstimateFree :: HasId p => Free p a b -> Int
 underEstimateFree = IS.size . go where

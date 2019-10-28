@@ -13,7 +13,7 @@ module Urakka (
     -- * Running concurrently
     runConcurrent,
     runConcurrent',
-    ConcSt, urakkaDone, urakkaQueued,
+    ConcSt, urakkaDone, urakkaQueued, urakkaOverEstimate,
     -- * Estimation
     -- | Estimation takes the task sharing into account.
     underEstimate,
