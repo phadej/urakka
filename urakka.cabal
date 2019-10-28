@@ -20,7 +20,7 @@ library
     , containers     ^>=0.5.11 || ^>=0.6.0.1
     , deepseq        ^>=1.4.3.0
     , selective      ^>=0.3
-    , stm            ^>=2.4.5.1
+    , stm            ^>=2.4.5.1 || ^>=2.5.0.0
     , unliftio-core  ^>=0.1.2.0
 
 test-suite example

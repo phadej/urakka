@@ -5,12 +5,9 @@ module Urakka.Serial where
 import Control.Concurrent.STM (atomically, readTVarIO, writeTVar)
 import Control.Monad          (guard)
 import Data.Type.Equality     ((:~:) (..), testEquality)
-import Data.List.NonEmpty (NonEmpty (..))
 
 import Urakka.Free
 import Urakka.Ref
-
-import Debug.Trace
 
 -- | Run 'Urakka' completely serially.
 runSerial :: a -> Urakka a b -> IO b
@@ -22,7 +19,7 @@ runSerial a u = do
 
 -- | Run one step of urakka, return either simplified 'Urakka', or final value.
 runSerialStep :: a -> Urakka a b -> IO (Either (Urakka a b) b)
-runSerialStep a (Urakka u) = case necessary u a of
+runSerialStep a0 (Urakka u) = case necessary u a0 of
     Right x -> return (Right x)
     Left (Necessary (UrakkaRef c trA trB ref) a) -> do
         res <- readTVarIO ref

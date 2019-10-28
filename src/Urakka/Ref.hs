@@ -17,7 +17,6 @@ import Control.Exception       (evaluate)
 import Control.Monad.IO.Class  (MonadIO (..))
 import Control.Monad.IO.Unlift (MonadUnliftIO (..))
 import Control.Selective       (Selective (..))
-import Control.Selective       (Selective)
 import Data.IORef              (IORef, atomicModifyIORef', newIORef)
 import System.IO.Unsafe        (unsafePerformIO)
 import Type.Reflection         (TypeRep, Typeable, typeRep)
@@ -43,7 +42,7 @@ counterRef :: IORef Int
 counterRef = unsafePerformIO (newIORef 0)
 {-# NOINLINE counterRef #-}
 
--- | Create a 'Urakka' task. 'Functor' way, think @<**>@
+-- | Create a 'Urakka' task. 'Functor' way, think @\<**\>@.
 urakka
     :: (Typeable b, Typeable c, NFData c, MonadUnliftIO m)
     => Urakka a b
