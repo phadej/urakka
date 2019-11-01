@@ -58,6 +58,14 @@ urakka g k = do
     return (g >>> u)
 
 -- | Create an 'Urakka' task. 'Arrow' way.
+--
+-- This function should be used carefully.
+-- The underlying @a -> m b@ will be evaluated only once
+-- folding into '\_ -> return result', and then shared across
+-- whole computation.
+--
+-- /TODO:/ make variant which differentiates inputs.
+--
 urakka'
     :: (Typeable a, Typeable b, NFData b, MonadUnliftIO m)
     => (a -> m b)
@@ -65,6 +73,8 @@ urakka'
 urakka' = fmap snd . urakkaSTM
 
 -- | 'urakka'' which also returns a 'STM' action, which can be used to track progress.
+--
+-- See note on 'urakka''.
 urakkaSTM
     :: (Typeable a, Typeable b, NFData b, MonadUnliftIO m)
     => (a -> m b)
