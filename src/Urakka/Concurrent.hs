@@ -43,9 +43,9 @@ urakkaQueued :: ConcSt -> STM Int
 urakkaQueued = fmap IS.size . readTVar . psQueued
 
 newConcSt :: IM.IntMap Int -> IO ConcSt
-newConcSt a = do
+newConcSt a' = do
     q <- newTVarIO IS.empty
-    a <- newTVarIO a
+    a <- newTVarIO a'
     d <- newTVarIO 0
     return $ ConcSt q a d
 
