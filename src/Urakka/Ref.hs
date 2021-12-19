@@ -9,7 +9,7 @@ module Urakka.Ref (
     urakkaSTM,
     ) where
 
-import Control.Arrow           (Arrow, ArrowChoice, returnA, (>>>))
+import Control.Arrow           (Arrow ((&&&)), ArrowChoice, returnA, (>>>))
 import Control.Category        (Category)
 import Control.Concurrent.STM  (STM, TVar, newTVarIO, readTVar, retry)
 import Control.DeepSeq         (NFData, force)
@@ -99,3 +99,9 @@ urakkaSTM k = withRunInIO $ \runInIO -> do
 
 instance HasId UrakkaRef where
     getId (UrakkaRef c _ _ _) = c
+
+instance Semigroup b => Semigroup (Urakka a b) where
+    x <> y = (x &&& y) >>> Urakka (Pure (uncurry (<>)))
+
+instance Monoid b => Monoid (Urakka a b) where
+    mempty = Urakka (Pure (const mempty))
