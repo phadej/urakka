@@ -18,6 +18,7 @@ import Control.Monad.IO.Class  (MonadIO (..))
 import Control.Monad.IO.Unlift (MonadUnliftIO (..))
 import Control.Selective       (Selective (..))
 import Data.IORef              (IORef, atomicModifyIORef', newIORef)
+import Data.Semigroup          (Semigroup (..))
 import System.IO.Unsafe        (unsafePerformIO)
 import Type.Reflection         (TypeRep, Typeable, typeRep)
 
@@ -105,3 +106,4 @@ instance Semigroup b => Semigroup (Urakka a b) where
 
 instance Monoid b => Monoid (Urakka a b) where
     mempty = Urakka (Pure (const mempty))
+    mappend x y = (x &&& y) >>> Urakka (Pure (uncurry mappend))
